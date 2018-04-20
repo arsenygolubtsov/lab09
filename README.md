@@ -1,25 +1,25 @@
 [![Build Status](https://travis-ci.org/arsenygolubtsov/lab08.svg?branch=master)](https://travis-ci.org/arsenygolubtsov/lab08)
 
-## Laboratory work VII
+## Laboratory work VIII
 
-Данная лабораторная работа посвещена изучению систем документирования исходного кода на примере **Doxygen**
+Данная лабораторная работа посвещена изучению средств пакетирования на примере **CPack**
 
 ```ShellSession
-$ open https://www.stack.nl/~dimitri/doxygen/manual/index.html
+$ open https://cmake.org/Wiki/CMake:CPackPackageGenerators
 ```
 
 ## Tasks
 
-- [x] 1. Создать публичный репозиторий с названием **lab08** на сервисе **GitHub**
-- [x] 2. Выполнить инструкцию учебного материала
-- [x] 3. Ознакомиться со ссылками учебного материала
-- [x] 4. Составить отчет и отправить ссылку личным сообщением в **Slack**
+- [ ] 1. Создать публичный репозиторий с названием **lab08** на сервисе **GitHub**
+- [ ] 2. Выполнить инструкцию учебного материала
+- [ ] 3. Ознакомиться со ссылками учебного материала
+- [ ] 4. Составить отчет и отправить ссылку личным сообщением в **Slack**
 
 ## Tutorial
 
 ```ShellSession
 $ export GITHUB_USERNAME=<имя_пользователя>
-$ export TEACHER_EMAIL=<rusdevops@gmail.com|justcppdev@gmail.com>
+$ export GITHUB_EMAIL=<адрес_почтового_ящика>
 $ alias edit=<nano|vi|vim|subl>
 $ alias gsed=sed # for *-nix system
 ```
@@ -31,52 +31,114 @@ $ source scripts/activate
 ```
 
 ```ShellSession
-$ wget https://redirector.gvt1.com/edgedl/go/go1.9.2.linux-amd64.tar.gz
-$ tar -C . -xzf go1.9.2.linux-amd64.tar.gz
-$ rm -rf go1.9.2.linux-amd64.tar.gz
-$ echo "export GOROOT=`pwd`/go" >> scripts/activate
-$ echo "export GOPATH=`pwd`/go_modules" >> scripts/activate
-$ echo "export PATH=\${PATH}:\${GOROOT}/bin" >> scripts/activate
-$ echo "export PATH=\${PATH}:\${GOPATH}/bin" >> scripts/activate
-$ source scripts/activate
-$ go get github.com/prasmussen/gdrive
-```
-
-```ShellSession
-$ git clone https://github.com/${GITHUB_USERNAME}/lab06 projects/lab08
+$ git clone https://github.com/${GITHUB_USERNAME}/lab07 projects/lab08
 $ cd projects/lab08
 $ git remote remove origin
 $ git remote add origin https://github.com/${GITHUB_USERNAME}/lab08
 ```
 
 ```ShellSession
-$ mkdir docs
-$ doxygen -g docs/doxygen.conf
-$ cat docs/doxygen.conf | less
+$ gsed -i '/project(print)/a\
+set(PRINT_VERSION_STRING "v${PRINT_VERSION}")
+' CMakeLists.txt
+$ gsed -i '/project(print)/a\
+set(PRINT_VERSION \
+\${PRINT_VERSION_MAJOR}.\${PRINT_VERSION_MINOR}.\${PRINT_VERSION_PATCH}.\${PRINT_VERSION_TWEAK})
+' CMakeLists.txt
+$ gsed -i '/project(print)/a\
+set(PRINT_VERSION_TWEAK 0)
+' CMakeLists.txt
+$ gsed -i '/project(print)/a\
+set(PRINT_VERSION_PATCH 0)
+' CMakeLists.txt
+$ gsed -i '/project(print)/a\
+set(PRINT_VERSION_MINOR 1)
+' CMakeLists.txt
+$ gsed -i '/project(print)/a\
+set(PRINT_VERSION_MAJOR 0)
+' CMakeLists.txt
 ```
 
 ```ShellSession
-$ gsed -i 's/\(PROJECT_NAME.*=\).*$/\1 print/g' docs/doxygen.conf
-$ gsed -i 's/\(EXAMPLE_PATH.*=\).*$/\1 examples/g' docs/doxygen.conf
-$ gsed -i 's/\(INCLUDE_PATH.*=\).*$/\1 examples/g' docs/doxygen.conf
-$ gsed -i 's/\(EXTRACT_ALL.*=\).*$/\1 YES/g' docs/doxygen.conf
-$ gsed -i 's/\(INPUT *=\).*$/\1 README.md include/g' docs/doxygen.conf
-$ gsed -i 's/\(USE_MDFILE_AS_MAINPAGE.*=\).*$/\1 README.md/g' docs/doxygen.conf
-$ gsed -i 's/\(OUTPUT_DIRECTORY.*=\).*$/\1 docs/g' docs/doxygen.conf
+$ touch DESCRIPTION && edit DESCRIPTION
+$ touch ChangeLog.md
+$ export DATE="`LANG=en_US date +'%a %b %d %Y'`"
+$ cat > ChangeLog.md <<EOF
+* ${DATE} ${GITHUB_USERNAME} <${GITHUB_EMAIL}> 0.1.0.0
+- Initial RPM release
+EOF
 ```
 
 ```ShellSession
-$ gsed -i 's/lab06/lab08/g' README.md
+$ cat > CPackConfig.cmake <<EOF
+include(InstallRequiredSystemLibraries)
+EOF
 ```
 
 ```ShellSession
-# документируем функции print 
-$ edit include/print.hpp
+$ cat >> CPackConfig.cmake <<EOF
+set(CPACK_PACKAGE_CONTACT ${GITHUB_EMAIL})
+set(CPACK_PACKAGE_VERSION_MAJOR \${PRINT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR \${PRINT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH \${PRINT_VERSION_PATCH})
+set(CPACK_PACKAGE_VERSION_TWEAK \${PRINT_VERSION_TWEAK})
+set(CPACK_PACKAGE_VERSION \${PRINT_VERSION})
+set(CPACK_PACKAGE_DESCRIPTION_FILE \${CMAKE_CURRENT_SOURCE_DIR}/DESCRIPTION)
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "static c++ library for printing")
+EOF
+```
+
+```ShellSession
+$ cat >> CPackConfig.cmake <<EOF
+
+set(CPACK_RESOURCE_FILE_LICENSE \${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
+set(CPACK_RESOURCE_FILE_README \${CMAKE_CURRENT_SOURCE_DIR}/README.md)
+EOF
+```
+
+```ShellSession
+$ cat >> CPackConfig.cmake <<EOF
+
+set(CPACK_RPM_PACKAGE_NAME "print-devel")
+set(CPACK_RPM_PACKAGE_LICENSE "MIT")
+set(CPACK_RPM_PACKAGE_GROUP "print")
+set(CPACK_RPM_PACKAGE_URL "https://github.com/${GITHUB_USERNAME}/lab07")
+set(CPACK_RPM_CHANGELOG_FILE \${CMAKE_CURRENT_SOURCE_DIR}/ChangeLog.md)
+set(CPACK_RPM_PACKAGE_RELEASE 1)
+EOF
+```
+
+```ShellSession
+$ cat >> CPackConfig.cmake <<EOF
+
+set(CPACK_DEBIAN_PACKAGE_NAME "libprint-dev")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://${GITHUB_USERNAME}.github.io/lab07")
+set(CPACK_DEBIAN_PACKAGE_PREDEPENDS "cmake >= 3.0")
+set(CPACK_DEBIAN_PACKAGE_RELEASE 1)
+EOF
+```
+
+```ShellSession
+$ cat >> CPackConfig.cmake <<EOF
+
+include(CPack)
+EOF
+```
+
+```ShellSession
+$ cat >> CMakeLists.txt <<EOF
+
+include(CPackConfig.cmake)
+EOF
+```
+
+```ShellSession
+$ gsed -i 's/lab07/lab08/g' README.md
 ```
 
 ```ShellSession
 $ git add .
-$ git commit -m"added doxygen.conf"
+$ git commit -m"added cpack config"
 $ git push origin master
 ```
 
@@ -86,32 +148,33 @@ $ travis enable
 ```
 
 ```ShellSession
-$ doxygen docs/doxygen.conf
-$ ls | grep "[^docs]" | xargs rm -rf
-$ mv docs/html/* . && rm -rf docs
-$ git checkout -b gh-pages
-$ git add .
-$ git commit -m"added documentation"
-$ git push origin gh-pages
-$ git checkout master
+$ cmake -H. -B_build
+$ cmake --build _build
+$ cd _build
+$ cpack -G "TGZ"
+$ cpack -G "RPM"
+$ cpack -G "DEB"
+$ cpack -G "NSIS"
+$ cpack -G "DragNDrop"
+$ cd ..
 ```
 
 ```ShellSession
-$ mkdir artifacts && cd artifacts
-$ sleep 20s && gnome-screenshot --file artifacts/screenshot.png
-# for macOS: $ screencapture -T 20 artifacts/screenshot.png
-# open https://${GITHUB_USERNAME}.github.io/lab08/print_8hpp.html
-$ gdrive upload screenshot.png
-$ SCREENSHOT_ID=`gdrive list | grep screenshot | awk '{ print $1; }'`
-$ gdrive share ${SCREENSHOT_ID} --role reader --type user --email ${TEACHER_EMAIL}
-$ echo https://drive.google.com/open?id=${SCREENSHOT_ID}
+$ cmake -H. -B_build -DCPACK_GENERATOR="TGZ"
+$ cmake --build _build --target package
+```
+
+```ShellSession
+$ mkdir artifacts
+$ mv _build/*.tar.gz artifacts
+$ tree artifacts
 ```
 
 ## Report
 
 ```ShellSession
 $ popd
-$ export LAB_NUMBER=07
+$ export LAB_NUMBER=08
 $ git clone https://github.com/tp-labs/lab${LAB_NUMBER} tasks/lab${LAB_NUMBER}
 $ mkdir reports/lab${LAB_NUMBER}
 $ cp tasks/lab${LAB_NUMBER}/README.md reports/lab${LAB_NUMBER}/REPORT.md
@@ -122,11 +185,10 @@ $ gistup -m "lab${LAB_NUMBER}"
 
 ## Links
 
-- [HTML](https://ru.wikipedia.org/wiki/HTML)
-- [LAΤΕΧ](https://ru.wikipedia.org/wiki/LaTeX)
-- [man](https://ru.wikipedia.org/wiki/Man_(%D0%BA%D0%BE%D0%BC%D0%B0%D0%BD%D0%B4%D0%B0_Unix))
-- [CHM](https://ru.wikipedia.org/wiki/HTMLHelp)
-- [PostScript](https://ru.wikipedia.org/wiki/PostScript)
+- [DMG](https://cmake.org/cmake/help/latest/module/CPackDMG.html)
+- [DEB](https://cmake.org/cmake/help/latest/module/CPackDeb.html)
+- [RPM](https://cmake.org/cmake/help/latest/module/CPackRPM.html)
+- [NSIS](https://cmake.org/cmake/help/latest/module/CPackNSIS.html)
 
 ```
 Copyright (c) 2017 Братья Вершинины
